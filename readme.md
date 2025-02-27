@@ -13,7 +13,7 @@ API Solution for teacher student task using TypeScript, MySQL, and TypeORM.
 1. Clone the repository:
    ```sh
    git clone https://github.com/Jason-C-Chandra/student-teacher-assesment.git
-   cd your-repo
+   cd student-teacher-assesment
    ```
 2. Start MySQL using Docker:
    ```sh
