@@ -32,14 +32,6 @@ API Solution for teacher student task using TypeScript, MySQL, and TypeORM.
    npm run dev
    ```
 
-## Database Configuration
-The database is configured with the following credentials:
-- **Host:** localhost
-- **Port:** 3306
-- **Username:** user
-- **Password:** teacher_student_system_password
-- **Database Name:** teacher_student_system
-
 ## Unit Test Configuration
 To run unit tests, use this command:
   ```sh
