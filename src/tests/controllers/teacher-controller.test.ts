@@ -1,71 +1,133 @@
 import { Request, Response } from "express";
-import { TeacherController } from "../../controllers/teacher-controller";
-import { TeacherRepository } from "../../repositories/teacher-repository";
 import { StudentRepository } from "../../repositories/student-repository";
+import { TeacherRepository } from "../../repositories/teacher-repository";
+import { DataSource } from "typeorm";
+import { StudentController } from "../../controllers/student-controller";
+import { TeacherController } from "../../controllers/teacher-controller";
 
-jest.mock("../repositories/TeacherRepository");
-jest.mock("../repositories/StudentRepository");
+jest.mock("../../repositories/student-repository");
+jest.mock("../../repositories/teacher-repository");
+
+const mockDataSource = {} as DataSource;
+let studentRepository: jest.Mocked<StudentRepository>;
+let teacherRepository: jest.Mocked<TeacherRepository>;
+let studentController: StudentController;
+let teacherController: TeacherController;
 
 describe("TeacherController", () => {
-  let teacherController: TeacherController;
-  let teacherRepository: jest.Mocked<TeacherRepository>;
-  let studentRepository: jest.Mocked<StudentRepository>;
   let req: Partial<Request>;
   let res: Partial<Response>;
 
   beforeEach(() => {
-    teacherRepository = new TeacherRepository(mockDa) as jest.Mocked<TeacherRepository>;
-    studentRepository = new StudentRepository() as jest.Mocked<StudentRepository>;
-    teacherController = new TeacherController( studentRepository,teacherRepository);
-    
-    req = { body: {} };
+    req = {};
     res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    studentRepository = new StudentRepository(mockDataSource) as jest.Mocked<StudentRepository>;
+    teacherRepository = new TeacherRepository(mockDataSource) as jest.Mocked<TeacherRepository>;
+
+    studentRepository.updateSuspendedStatus = jest.fn();
+    teacherRepository.findByEmail = jest.fn();
+    teacherRepository.createAndSave = jest.fn();
+
+    studentController = new StudentController(studentRepository);
+    teacherController = new TeacherController(studentRepository, teacherRepository);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  const mockFindByEmail = (repo: any, email: string, result: any) => {
-    (repo.findByEmail as jest.Mock).mockResolvedValueOnce(result);
-  };
-
-  const mockCreateAndSave = (repo: any, result: any) => {
-    (repo.createAndSave as jest.Mock).mockResolvedValueOnce(result);
-  };
-
   describe("registerStudents", () => {
-    it("should register new students under a teacher", async () => {
+    it("should register a teacher and students successfully", async () => {
       req.body = {
         teacher: "teacher@example.com",
         students: ["student1@example.com", "student2@example.com"],
       };
 
-      mockFindByEmail(teacherRepository, "teacher@example.com", { email: "teacher@example.com" });
-      req.body.students.forEach((student) => {
-        mockFindByEmail(studentRepository, student, null);
-        mockCreateAndSave(studentRepository, { email: student, teachers: [] });
-      });
+      (teacherRepository.findByEmail as jest.Mock).mockResolvedValue(null);
+      (teacherRepository.createAndSave as jest.Mock).mockResolvedValue({ email: "teacher@example.com" });
+      (studentRepository.findByEmail as jest.Mock)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      (studentRepository.createAndSave as jest.Mock)
+        .mockResolvedValueOnce({ email: "student1@example.com", teachers: [] })
+        .mockResolvedValueOnce({ email: "student2@example.com", teachers: [] });
 
       await teacherController.registerStudents(req as Request, res as Response);
 
-      expect(studentRepository.createAndSave).toHaveBeenCalledTimes(req.body.students.length);
+      expect(teacherRepository.findByEmail).toHaveBeenCalledWith("teacher@example.com");
+      expect(teacherRepository.createAndSave).toHaveBeenCalledWith("teacher@example.com");
+      expect(studentRepository.findByEmail).toHaveBeenCalledTimes(2);
+      expect(studentRepository.createAndSave).toHaveBeenCalledTimes(2);
+      expect(res.status).toHaveBeenCalledWith(204);
+    });
+
+    it("should update the student's teachers if the student exists", async () => {
+      req.body = {
+        teacher: "teacher@example.com",
+        students: ["student1@example.com", "student2@example.com"],
+      };
+
+      (teacherRepository.findByEmail as jest.Mock).mockResolvedValue({ email: "teacher@example.com" });
+      (studentRepository.findByEmail as jest.Mock)
+        .mockResolvedValueOnce({ email: "student1@example.com", teachers: [] })
+        .mockResolvedValueOnce({ email: "student2@example.com", teachers: [{ email: "teacher1@example.com" }] });
+      (studentRepository.createAndSave as jest.Mock)
+        .mockResolvedValueOnce({ email: "student1@example.com", teachers: [{ email: "teacher@example.com" }] })
+        .mockResolvedValueOnce({ email: "student2@example.com", teachers: [{ email: "teacher1@example.com" }, { email: "teacher@example.com" }] });
+
+      await teacherController.registerStudents(req as Request, res as Response);
+
+      expect(studentRepository.createAndSave).toHaveBeenCalledTimes(2);
       expect(res.status).toHaveBeenCalledWith(204);
     });
 
     it("should return 500 if an error occurs", async () => {
       req.body = { teacher: "teacher@example.com", students: ["student1@example.com"] };
-      mockFindByEmail(teacherRepository, "teacher@example.com", null);
-      (teacherRepository.createAndSave as jest.Mock).mockRejectedValue(new Error("Database error"));
+      (teacherRepository.findByEmail as jest.Mock).mockRejectedValue(new Error("Database error"));
 
-      await expect(
-        teacherController.registerStudents(req as Request, res as Response)
-      ).rejects.toThrow("Database error");
+      await teacherController.registerStudents(req as Request, res as Response);
+
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ message: "Failed to register students" });
+    });
+  });
+
+  describe("getCommonStudents", () => {
+    it("should return common students for given teachers", async () => {
+      req.query = { teacher: ["teacher1@example.com", "teacher2@example.com"] };
+      (studentRepository.findCommonStudents as jest.Mock).mockResolvedValue([
+        { email: "student1@example.com" },
+        { email: "student2@example.com" },
+      ]);
+
+      await teacherController.getCommonStudents(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ students: ["student1@example.com", "student2@example.com"] });
+    });
+  });
+
+  describe("retrieveForNotifications", () => {
+    it("should retrieve students for notifications", async () => {
+      req.body = {
+        teacher: "teacher@example.com",
+        notification: "Hey @student1@example.com, check this out! @student2@example.com",
+      };
+
+      (studentRepository.findForNotifications as jest.Mock).mockResolvedValue([
+        { email: "student1@example.com" },
+        { email: "student2@example.com" },
+      ]);
+
+      await teacherController.retrieveForNotifications(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ recipients: ["student1@example.com", "student2@example.com"] });
     });
   });
 });
