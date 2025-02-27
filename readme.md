@@ -7,7 +7,7 @@ API Solution for teacher student task using TypeScript, MySQL, and TypeORM.
 ### Prerequisites
 - Docker
 - Node.js (v18 or later)
-- npm 
+- npm
 
 ### Setup & Run
 1. Clone the repository:
@@ -23,7 +23,11 @@ API Solution for teacher student task using TypeScript, MySQL, and TypeORM.
    ```sh
    npm install
    ```
-4. Start the server:
+4. Run database migrations:
+   ```sh
+   npm run migrate
+   ```
+5. Start the server:
    ```sh
    npm run dev
    ```
@@ -36,13 +40,11 @@ The database is configured with the following credentials:
 - **Password:** teacher_student_system_password
 - **Database Name:** teacher_student_system
 
-## API Endpoints
-| Method | Endpoint          | Description           |
-|--------|------------------|----------------------|
-| GET    | `/teachers`      | Get all teachers     |
-| POST   | `/teachers`      | Create a teacher     |
-| GET    | `/students`      | Get all students     |
-| POST   | `/students`      | Create a student     |
+## Unit Test Configuration
+To run unit tests, use this command:
+  ```sh
+  npm run test
+   ```
 
 ## License
 MIT
