@@ -46,6 +46,3 @@ To run unit tests, use this command:
   npm run test
    ```
 
-## License
-MIT
-
