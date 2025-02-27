@@ -17,7 +17,7 @@ export class StudentController {
       if (studentAvailable) {
         await this.studentRepository.updateSuspendedStatus(student, true);
       } else {
-        res
+        return res
           .status(400)
           .json({ message: "Failed to find student with that email" });
       }

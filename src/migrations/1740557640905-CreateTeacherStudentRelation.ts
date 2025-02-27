@@ -6,8 +6,8 @@ export class CreateTeacherStudentRelation1740557640905
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE \`teacher_students_student\` (
-        \`teacherId\` BIGINT UNSIGNED NOT NULL,
-        \`studentId\` BIGINT UNSIGNED NOT NULL,
+        \`teacherId\` VARCHAR(36) NOT NULL,
+        \`studentId\`  VARCHAR(36) NOT NULL,
         PRIMARY KEY (\`teacherId\`, \`studentId\`),
         CONSTRAINT \`FK_teacher_students_teacher\` FOREIGN KEY (\`teacherId\`) 
           REFERENCES \`teacher\`(\`id\`) ON DELETE CASCADE,

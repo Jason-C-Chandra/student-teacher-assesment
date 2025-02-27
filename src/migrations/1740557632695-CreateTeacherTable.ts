@@ -4,7 +4,7 @@ export class CreateTeacherTable1740557632695 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE \`teacher\` (
-        \`id\` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        \`id\` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (uuid()),
         \`email\` VARCHAR(255) UNIQUE NOT NULL
       );
     `);
