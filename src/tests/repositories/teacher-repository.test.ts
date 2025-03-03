@@ -11,9 +11,8 @@ const teacherEmail1 = "teacher1@example.com";
 const teacherEmail2 = "teacher2@example.com";
 
 beforeAll(async () => {
-  // Create an in-memory SQLite database for testing
   testDataSource = new DataSource({
-    type: "mysql", // Change from "sqlite" to "mysql"
+    type: "mysql", 
     host: "localhost",
     port: 3306, // Default MySQL port
     username: "user", // Match docker-compose
